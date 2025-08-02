@@ -1,0 +1,69 @@
+import os
+from flask import Flask, render_template, request, send_file
+from werkzeug.utils import secure_filename
+from pdf2docx import Converter
+from docx import Document
+from reportlab.pdfgen import canvas
+
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def txt_to_pdf(txt_file_path, pdf_output_path):
+    c = canvas.Canvas(pdf_output_path)
+    with open(txt_file_path, "r") as file:
+        lines = file.readlines()
+        y = 800
+        for line in lines:
+            c.drawString(100, y, line.strip())
+            y -= 15
+    c.save()
+
+def docx_to_pdf(docx_path, output_pdf_path):
+    doc = Document(docx_path)
+    temp_txt_path = docx_path.replace(".docx", ".txt")
+    with open(temp_txt_path, "w") as f:
+        for para in doc.paragraphs:
+            f.write(para.text + "\n")
+    txt_to_pdf(temp_txt_path, output_pdf_path)
+    os.remove(temp_txt_path)
+
+def pdf_to_docx(pdf_path, docx_output_path):
+    cv = Converter(pdf_path)
+    cv.convert(docx_output_path)
+    cv.close()
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        file = request.files['file']
+        conversion_type = request.form['conversion_type']
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        name, ext = os.path.splitext(filename)
+
+        if conversion_type == "docx_to_pdf":
+            output_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{name}.pdf")
+            docx_to_pdf(file_path, output_path)
+
+        elif conversion_type == "txt_to_pdf":
+            output_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{name}.pdf")
+            txt_to_pdf(file_path, output_path)
+
+        elif conversion_type == "pdf_to_docx":
+            output_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{name}.docx")
+            pdf_to_docx(file_path, output_path)
+
+        else:
+            return "Invalid conversion type"
+
+        return send_file(output_path, as_attachment=True)
+
+    return render_template("index.html")
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=10000)

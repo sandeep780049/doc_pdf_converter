@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document ↔ PDF Converter</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Document ↔ PDF Converter</h1>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="file" required><br><br>
+            <label for="conversion_type">Select Conversion:</label><br>
+            <select name="conversion_type" required>
+                <option value="docx_to_pdf">DOCX ➜ PDF</option>
+                <option value="txt_to_pdf">TXT ➜ PDF</option>
+                <option value="pdf_to_docx">PDF ➜ DOCX</option>
+            </select><br><br>
+            <button type="submit">Convert</button>
+        </form>
+    </div>
+</body>
+</html>
